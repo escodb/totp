@@ -1,0 +1,31 @@
+{
+  "name": "@escodb/totp",
+  "version": "0.1.0",
+  "description": "TOTP authenticator built on EscoDB",
+  "author": "James Coglan <jcoglan@gmail.com> (http://jcoglan.com/)",
+  "keywords": [
+    "totp",
+    "authenticator",
+    "2fa",
+    "mfa",
+    "security"
+  ],
+  "license": "GPL-3.0",
+  "repository": "github:escodb/totp",
+  "bugs": "https://github.com/escodb/totp/issues",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "files": [
+    "bin",
+    "lib"
+  ],
+  "bin": {
+    "totp": "./bin/totp"
+  },
+  "main": "./lib/index",
+  "dependencies": {
+    "@escodb/core": "github:escodb/core",
+    "thirty-two": "^1.0.2"
+  }
+}
