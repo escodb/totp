@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+
+'use strict'
+
+const { resolve } = require('path')
+const otp = require('../')
+const Store = require('../lib/store')
+
+const STORE_PATH = resolve(process.env.HOME, process.env.TOTP_PATH)
+const STORE_KEY = process.env.TOTP_KEY
+
+async function main() {
+  let store = await Store.open(STORE_PATH, STORE_KEY)
+  let keys = await store.allKeys()
+
+  for (let { name, key } of keys) {
+    let code = otp.totp(otp.keyFromText(key))
+    console.log('    ', code, '  ', name)
+  }
+}
+
+main().catch(console.error)
