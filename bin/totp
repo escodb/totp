@@ -2,24 +2,35 @@
 
 'use strict'
 
+const fs = require('fs').promises
 const { resolve } = require('path')
 const { parseArgs } = require('util')
+
 const { Store, keyFromText, totp } = require('../')
 
 const STORE_PATH = resolve(process.env.HOME, process.env.TOTP_PATH)
 const STORE_KEY = process.env.TOTP_KEY
 
+const options = {
+  add:    { short: 'a', type: 'string' },
+  delete: { short: 'd', type: 'string' },
+  export: { short: 'e', type: 'string' },
+  import: { short: 'i', type: 'string' }
+}
+
 const { values: config, positionals } = parseArgs({
-  options: {
-    add:    { short: 'a', type: 'string' },
-    delete: { short: 'd', type: 'string' }
-  },
+  options,
   strict: true,
   allowPositionals: true
 })
 
 function getStore () {
   return Store.open(STORE_PATH, STORE_KEY)
+}
+
+async function getKeys () {
+  let store = await getStore()
+  return store.allKeys()
 }
 
 const commands = {
@@ -33,9 +44,30 @@ const commands = {
     await store.delete(name)
   },
 
-  async main () {
+  async export ({ export: path }) {
+    let keys = await getKeys()
+    let exported = { services: {} }
+
+    for (let { name, key } of keys) {
+      exported.services[name] = { key }
+    }
+
+    let json = JSON.stringify(exported, true, 2)
+    await fs.writeFile(path, json)
+  },
+
+  async import ({ import: path }) {
     let store = await getStore()
-    let keys = await store.allKeys()
+    let json = await fs.readFile(path, 'utf8')
+    let imported = JSON.parse(json)
+
+    for (let [name, { key }] of Object.entries(imported.services)) {
+      await store.add(name, key)
+    }
+  },
+
+  async main () {
+    let keys = await getKeys()
 
     for (let { name, key } of keys) {
       let code = totp(keyFromText(key))
@@ -44,8 +76,5 @@ const commands = {
   }
 }
 
-let cmd = 'main'
-if (config.add !== undefined) cmd = 'add'
-if (config.delete !== undefined) cmd = 'delete'
-
+let cmd = Object.keys(options).find((key) => key in config) || 'main'
 commands[cmd](config, positionals).catch(console.error)
